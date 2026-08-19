@@ -92,12 +92,12 @@
                     <input type="text" id="studentSearchInput" placeholder="Qidirish... (Ism, telefon, manzil va h.k.)" oninput="filterStudentsTable(this.value)" class="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
                 </div>
                 <div class="flex flex-wrap gap-4 text-sm text-gray-600 font-medium">
-                    <span>Oila: <strong class="text-black">0 ta</strong></span>
-                    <span>Oilaasiz: <strong class="text-black">333 ta</strong></span>
-                    <span>O'z uyi: <strong class="text-black">0 ta</strong></span>
-                    <span>Ijara: <strong class="text-black">0 ta</strong></span>
-                    <span>Qarindoshniki: <strong class="text-black">0 ta</strong></span>
-                    <span>Yotoqxona: <strong class="text-black">0 ta</strong></span>
+                    <span>Oila: <strong class="text-black" id="sumFamilyFull">0 ta</strong></span>
+                    <span>Oilaasiz: <strong class="text-black" id="sumFamilyPartial">0 ta</strong></span>
+                    <span>O'z uyi: <strong class="text-black" id="sumHousingOwn">0 ta</strong></span>
+                    <span>Ijara: <strong class="text-black" id="sumHousingRent">0 ta</strong></span>
+                    <span>Qarindoshniki: <strong class="text-black" id="sumHousingRelative">0 ta</strong></span>
+                    <span>Yotoqxona: <strong class="text-black" id="sumHousingDorm">0 ta</strong></span>
                 </div>
                 <div id="studentCountBadge" class="bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm font-semibold">
                     1 ta
@@ -1819,11 +1819,11 @@
             let boys = 0, girls = 0;
 
             filtered.forEach(r => {
-                const h = r.cells[9].textContent.trim();
-                if (h === "O'z uyi") housing.own++;
-                else if (h === "Ijara") housing.rent++;
-                else if (h === "Qarindoshniki") housing.relative++;
-                else if (h === "Yotoqxona") housing.dorm++;
+                const h = r.cells[9].textContent.trim().toLowerCase();
+                if (h.includes("ijara")) housing.rent++;
+                else if (h.includes("qarindosh")) housing.relative++;
+                else if (h.includes("o'z uy") || h.includes("oz uy")) housing.own++;
+                else if (h.includes("yotoqxona") || h.includes("ttj")) housing.dorm++;
 
                 const fm = r.cells[12].textContent.trim();
                 if (fm === "Oila") family.full++;
@@ -1869,6 +1869,13 @@
             updateWidth('statHousingRelativeBar', Math.round(housing.relative/t*100));
             updateText('statHousingDorm', housing.dorm, ' ta (' + Math.round(housing.dorm/t*100) + '%)');
             updateWidth('statHousingDormBar', Math.round(housing.dorm/t*100));
+
+            updateText('sumHousingOwn', housing.own, ' ta');
+            updateText('sumHousingRent', housing.rent, ' ta');
+            updateText('sumHousingRelative', housing.relative, ' ta');
+            updateText('sumHousingDorm', housing.dorm, ' ta');
+            updateText('sumFamilyFull', family.full, ' ta');
+            updateText('sumFamilyPartial', family.partial, ' ta');
 
             updateText('statFamilyFull', family.full, ' ta');
             updateText('statFamilyPartial', family.partial, ' ta');
@@ -2418,11 +2425,11 @@
             let boys = 0, girls = 0;
 
             rows.forEach(r => {
-                const h = (r[8] || '').trim();
-                if (h === "O'z uyi") housing.own++;
-                else if (h === "Ijara") housing.rent++;
-                else if (h === "Qarindoshniki") housing.relative++;
-                else if (h === "Yotoqxona") housing.dorm++;
+                const h = (r[8] || '').trim().toLowerCase();
+                if (h.includes("ijara")) housing.rent++;
+                else if (h.includes("qarindosh")) housing.relative++;
+                else if (h.includes("o'z uy") || h.includes("oz uy")) housing.own++;
+                else if (h.includes("yotoqxona") || h.includes("ttj")) housing.dorm++;
 
                 const fm = (r[11] || '').trim();
                 if (fm === "Oila") family.full++;
