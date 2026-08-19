@@ -1796,7 +1796,11 @@
 
         function filterStats(selectedGroup) {
             const rows = document.querySelectorAll('#studentsTableBody tr');
-            const filtered = selectedGroup ? Array.from(rows).filter(r => (r.cells[5].getAttribute('data-group') || r.cells[5].textContent.trim()) === selectedGroup) : Array.from(rows);
+            const filtered = selectedGroup ? Array.from(rows).filter(r => {
+                const gVal = (r.cells[5].getAttribute('data-group') || r.cells[5].textContent.trim()).trim();
+                const gName = selectedGroup.split(' / ').pop().trim();
+                return gVal === gName || gVal === selectedGroup;
+            }) : Array.from(rows);
             const total = filtered.length;
 
             document.getElementById('statTotalStudents').textContent = total + ' ta';
