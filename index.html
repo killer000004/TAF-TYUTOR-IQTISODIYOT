@@ -1794,6 +1794,10 @@
             document.getElementById('studentCountBadge').textContent = visible + ' ta';
         }
 
+        function normApos(s) {
+            return String(s).replace(/[\u2018\u2019\u02BB\u02BC\u0060]/g, "'");
+        }
+
         function filterStats(selectedGroup) {
             const rows = document.querySelectorAll('#studentsTableBody tr');
             const filtered = selectedGroup ? Array.from(rows).filter(r => {
@@ -1846,9 +1850,9 @@
 
                 if (r.cells[4].textContent.trim() === "Erkak") boys++; else girls++;
 
-                const place = r.cells[7].textContent.trim().toLowerCase();
+                const place = normApos(r.cells[7].textContent.trim().toLowerCase());
                 for (let key of regionKeys) {
-                    if (place.includes(key.toLowerCase())) {
+                    if (place.includes(normApos(key).toLowerCase())) {
                         regions[key]++;
                         break;
                     }
@@ -2452,9 +2456,9 @@
 
                 if ((r[3] || '').trim() === "Erkak") boys++; else girls++;
 
-                const place = (r[6] || '').trim().toLowerCase();
+                const place = normApos((r[6] || '').trim().toLowerCase());
                 for (let key of regionKeys) {
-                    if (place.includes(key.toLowerCase())) {
+                    if (place.includes(normApos(key).toLowerCase())) {
                         regions[key]++;
                         break;
                     }
