@@ -2048,7 +2048,7 @@
                     studentsRows.forEach(row => {
                         const name = (row[1] || '').trim();
                         if (groupOverrides[name]) {
-                            row[4] = groupOverrides[name];
+                            row[5] = groupOverrides[name];
                         }
                         if ((!row[0] || !String(row[0]).trim()) && photoOverrides[name]) {
                             row[0] = photoOverrides[name];
@@ -2091,7 +2091,7 @@
                         const tr = document.createElement('tr');
                         tr.className = 'hover:bg-gray-50';
                         const photo = row[0] || '';
-                        const rawGroup = (row[4] || '').trim();
+                        const rawGroup = (row[5] || '').trim();
                         let gi = groupInfo[rawGroup];
                         let gName = rawGroup;
                         let dirFromRaw = '';
@@ -2106,11 +2106,10 @@
                             <td class="p-3">${i + 1}</td>
                             <td class="p-3"><img src="${photo || ''}" class="w-10 h-10 rounded-full object-cover shadow cursor-pointer" onclick="viewPhoto(this)" onerror="this.style.display='none'" onload="if(this.src===window.location.href||!this.src){this.style.display='none'}"></td>
                             <td class="p-3 font-medium">${row[1] || ''}</td>
-                            <td class="p-3">${row[14] || ''}</td>
                             <td class="p-3">${row[2] || ''}</td>
                             <td class="p-3">${row[3] || ''}</td>
+                            <td class="p-3">${row[4] || ''}</td>
                             <td class="p-3" data-group="${gName}">${gDisplay}</td>
-                            <td class="p-3">${row[5] || ''}</td>
                             <td class="p-3">${row[6] || ''}</td>
                             <td class="p-3">${row[7] || ''}</td>
                             <td class="p-3">${row[8] || ''}</td>
@@ -2119,6 +2118,7 @@
                             <td class="p-3">${row[11] || ''}</td>
                             <td class="p-3">${row[12] || ''}</td>
                             <td class="p-3">${row[13] || ''}</td>
+                            <td class="p-3">${row[14] || ''}</td>
                             <td class="p-3 flex gap-2">
                                 <button onclick="editStudent(this)" class="bg-yellow-500 hover:bg-yellow-600 text-white px-2.5 py-1 rounded text-xs">Tahrirlash</button>
                                 <button onclick="deleteStudent(this)" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded text-xs">O'chirish</button>
@@ -2179,7 +2179,7 @@
                 const groupStudentCount = {};
                 if (studentsRows) {
                     studentsRows.forEach(s => {
-                        let g = (s[4] || '').trim();
+                        let g = (s[5] || '').trim();
                         if (!g) return;
                         if (g.includes(' / ')) {
                             const parts = g.split(' / ');
@@ -2325,7 +2325,7 @@
                     studentsRows.forEach(row => {
                         const name = (row[1] || '').trim();
                         if (groupOverrides[name]) {
-                            row[4] = groupOverrides[name];
+                            row[5] = groupOverrides[name];
                         }
                         if ((!row[0] || !String(row[0]).trim()) && photoOverrides[name]) {
                             row[0] = photoOverrides[name];
@@ -2343,7 +2343,7 @@
                 let filtered = [];
                 if (studentsRows) {
                     studentsRows.forEach((row, index) => {
-                        const studentGroup = (row[4] || '').trim();
+                        const studentGroup = (row[5] || '').trim();
                         let match = true;
                         if (userGroups && userGroups.length > 0 && userGroups[0] !== 'Biriktirilmagan') {
                             const sParts = studentGroup.split(' / ');
@@ -2399,16 +2399,15 @@
                 tr.className = 'hover:bg-gray-50';
                 tr.dataset.index = globalIndex;
                 const photo = row[0] || '';
-                const group = row[4] || '';
+                const group = row[5] || '';
                 tr.innerHTML = `
                     <td class="p-3">${i + 1}</td>
                     <td class="p-3"><img src="${photo}" class="w-10 h-10 rounded-full object-cover shadow cursor-pointer" onclick="viewPhoto(this)" onerror="this.style.display='none'" alt="Rasm"></td>
                     <td class="p-3 font-medium">${row[1] || ''}</td>
-                    <td class="p-3">${row[14] || ''}</td>
                     <td class="p-3">${row[2] || ''}</td>
                     <td class="p-3">${row[3] || ''}</td>
+                    <td class="p-3">${row[4] || ''}</td>
                     <td class="p-3" data-group="${group}">${group}</td>
-                    <td class="p-3">${row[5] || ''}</td>
                     <td class="p-3">${row[6] || ''}</td>
                     <td class="p-3">${row[7] || ''}</td>
                     <td class="p-3">${row[8] || ''}</td>
@@ -2417,6 +2416,7 @@
                     <td class="p-3">${row[11] || ''}</td>
                     <td class="p-3">${row[12] || ''}</td>
                     <td class="p-3">${row[13] || ''}</td>
+                    <td class="p-3">${row[14] || ''}</td>
                     <td class="p-3 flex gap-2">
                         <button onclick="editStudent(this)" data-perm="student_edit" class="bg-yellow-500 hover:bg-yellow-600 text-white px-2.5 py-1 rounded text-xs">Tahrirlash</button>
                         <button onclick="deleteStudent(this)" data-perm="student_delete" class="bg-red-500 hover:bg-red-600 text-white px-2.5 py-1 rounded text-xs"><i class="fa-solid fa-trash-can"></i></button>
@@ -2442,7 +2442,7 @@
             const perGroupCount = {};
             filtered.forEach(item => {
                 const row = item.row || item;
-                const g = (row[4] || '').trim();
+                const g = (row[5] || '').trim();
                 if (!g) return;
                 const gName = g.includes(' / ') ? g.split(' / ').pop().trim() : g;
                 perGroupCount[gName] = (perGroupCount[gName] || 0) + 1;
@@ -2493,7 +2493,7 @@
 
         function renderUserStats(rows) {
             const total = rows.length;
-            const groupSet = new Set(rows.map(r => (r[4] || '').trim()).filter(Boolean));
+            const groupSet = new Set(rows.map(r => (r[5] || '').trim()).filter(Boolean));
 
             const housing = {own:0, rent:0, relative:0, dorm:0};
             const family = {full:0, partial:0, divorced:0};
@@ -2510,30 +2510,30 @@
             let boys = 0, girls = 0;
 
             rows.forEach(r => {
-                const h = (r[8] || '').trim().toLowerCase();
+                const h = (r[9] || '').trim().toLowerCase();
                 if (h.includes("ijara")) housing.rent++;
                 else if (h.includes("qarindosh")) housing.relative++;
                 else if (h.includes("o'z uy") || h.includes("oz uy")) housing.own++;
                 else if (h.includes("yotoqxona") || h.includes("ttj")) housing.dorm++;
 
-                const fm = (r[11] || '').trim();
+                const fm = (r[12] || '').trim();
                 if (fm === "Oila") family.full++;
                 else if (fm === "Oilaasiz") family.partial++;
                 else if (fm.includes("Ajrashgan")) family.divorced++;
 
-                const sc = (r[12] || '').trim().toLowerCase();
+                const sc = (r[13] || '').trim().toLowerCase();
                 if (sc.includes("temir")) social.iron++;
                 if (sc.includes("ayol")) social.women++;
                 if (sc.includes("yosh")) social.youth++;
 
-                const or = (r[13] || '').trim().toLowerCase();
+                const or = (r[14] || '').trim().toLowerCase();
                 if (or.includes("chin yetim") || or.includes("ota-onasini")) orphan.both++;
                 if (or.includes("ota yoki") || or.includes("ota-onasidan")) orphan.one++;
                 if (or.includes("ijtimoiy yetim")) orphan.social++;
 
-                if ((r[3] || '').trim() === "Erkak") boys++; else girls++;
+                if ((r[4] || '').trim() === "Erkak") boys++; else girls++;
 
-                const place = normApos((r[6] || '').trim().toLowerCase());
+                const place = normApos((r[7] || '').trim().toLowerCase());
                 for (let key of regionKeys) {
                     if (place.includes(normApos(key).toLowerCase())) {
                         regions[key]++;
@@ -2897,7 +2897,7 @@
                 return;
             }
 
-            const rowData = [photoSrc, fullName, birthDate, gender, group, phone, birthPlace, address, housing, father, mother, familyStatus, socialCategory, orphanCategory, jshshr];
+            const rowData = [photoSrc, fullName, jshshr, birthDate, gender, group, phone, birthPlace, address, housing, father, mother, familyStatus, socialCategory, orphanCategory];
 
             {
                 try {
