@@ -112,6 +112,7 @@
                             <th class="p-3 border-r">#</th>
                             <th class="p-3 border-r">Rasm</th>
                             <th class="p-3 border-r">Ism familiya o'chestva</th>
+                            <th class="p-3 border-r">JSHSHR</th>
                             <th class="p-3 border-r">Tug'ilgan sana</th>
                             <th class="p-3 border-r">Jinsi</th>
                             <th class="p-3 border-r">Yo'nalish / Kurs / Guruh</th>
@@ -542,6 +543,7 @@
                             <th class="p-3 border-r">#</th>
                             <th class="p-3 border-r">Rasm</th>
                             <th class="p-3 border-r">Ism familiya o'chestva</th>
+                            <th class="p-3 border-r">JSHSHR</th>
                             <th class="p-3 border-r">Tug'ilgan sana</th>
                             <th class="p-3 border-r">Jinsi</th>
                             <th class="p-3 border-r">Yo'nalish / Kurs / Guruh</th>
@@ -804,6 +806,10 @@
                     <div class="md:col-span-2">
                         <label class="block text-xs font-medium text-gray-700 mb-0.5">Ism familiya o'chestva</label>
                         <input type="text" id="stFullName" required autofocus class="w-full px-2.5 py-1.5 border rounded text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="Aliyev Vali G'anijon o'g'li">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-medium text-gray-700 mb-0.5">JSHSHR (Jismoniy shaxs shaxsiy raqami)</label>
+                        <input type="text" id="stJshshr" inputmode="numeric" maxlength="14" class="w-full px-2.5 py-1.5 border rounded text-xs focus:ring-2 focus:ring-blue-500 focus:outline-none" placeholder="14 xonali JSHSHR raqami">
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-700 mb-0.5">Tug'ilgan sana</label>
@@ -1435,6 +1441,7 @@
                 { wch: 5 },  // #
                 { wch: 30 }, // Rasm
                 { wch: 35 }, // Ism familiya o'chestva
+                { wch: 20 }, // JSHSHR
                 { wch: 15 }, // Tug'ilgan sana
                 { wch: 10 }, // Jinsi
                 { wch: 25 }, // Yo'nalish / Guruh
@@ -1614,7 +1621,7 @@
             html += '</div>';
             rows.forEach(row => {
                 const nameFull = row.cells[2].textContent.trim();
-                const currentGroup = row.cells[5].getAttribute('data-group') || row.cells[5].textContent.trim();
+                const currentGroup = row.cells[6].getAttribute('data-group') || row.cells[6].textContent.trim();
                 if (q && !nameFull.toLowerCase().includes(q)) return;
                 const isInGroup = currentGroup === selectedGroup;
                 const disabled = isInGroup ? 'disabled' : '';
@@ -1651,8 +1658,8 @@
                 const name = row.cells[2].textContent.trim();
                 if (selected.includes(name)) {
                     const gi = typeof groupInfoMap !== 'undefined' ? groupInfoMap[selectedGroup] : null;
-                    row.cells[5].textContent = gi ? `${gi.dir} / ${gi.course} / ${selectedGroup}` : selectedGroup;
-                    row.cells[5].setAttribute('data-group', selectedGroup);
+                    row.cells[6].textContent = gi ? `${gi.dir} / ${gi.course} / ${selectedGroup}` : selectedGroup;
+                    row.cells[6].setAttribute('data-group', selectedGroup);
                     overrides[name] = selectedGroup;
                 }
             });
@@ -1801,7 +1808,7 @@
         function filterStats(selectedGroup) {
             const rows = document.querySelectorAll('#studentsTableBody tr');
             const filtered = selectedGroup ? Array.from(rows).filter(r => {
-                const gVal = (r.cells[5].getAttribute('data-group') || r.cells[5].textContent.trim()).trim();
+                const gVal = (r.cells[6].getAttribute('data-group') || r.cells[6].textContent.trim()).trim();
                 const gName = selectedGroup.split(' / ').pop().trim();
                 return gVal === gName || gVal === selectedGroup;
             }) : Array.from(rows);
@@ -1809,7 +1816,7 @@
 
             document.getElementById('statTotalStudents').textContent = total + ' ta';
 
-            const groupSet = new Set(filtered.map(r => r.cells[5].getAttribute('data-group') || r.cells[5].textContent.trim()));
+            const groupSet = new Set(filtered.map(r => r.cells[6].getAttribute('data-group') || r.cells[6].textContent.trim()));
             document.getElementById('statActiveGroups').textContent = (selectedGroup ? 1 : groupSet.size) + ' ta';
 
             const housing = {own:0, rent:0, relative:0, dorm:0};
@@ -1827,30 +1834,30 @@
             let boys = 0, girls = 0;
 
             filtered.forEach(r => {
-                const h = r.cells[9].textContent.trim().toLowerCase();
+                const h = r.cells[10].textContent.trim().toLowerCase();
                 if (h.includes("ijara")) housing.rent++;
                 else if (h.includes("qarindosh")) housing.relative++;
                 else if (h.includes("o'z uy") || h.includes("oz uy")) housing.own++;
                 else if (h.includes("yotoqxona") || h.includes("ttj")) housing.dorm++;
 
-                const fm = r.cells[12].textContent.trim();
+                const fm = r.cells[13].textContent.trim();
                 if (fm === "Oila") family.full++;
                 else if (fm === "Oilaasiz") family.partial++;
                 else if (fm.includes("Ajrashgan")) family.divorced++;
 
-                const sc = r.cells[13].textContent.trim().toLowerCase();
+                const sc = r.cells[14].textContent.trim().toLowerCase();
                 if (sc.includes("temir")) social.iron++;
                 if (sc.includes("ayol")) social.women++;
                 if (sc.includes("yosh")) social.youth++;
 
-                const or = r.cells[14].textContent.trim().toLowerCase();
+                const or = r.cells[15].textContent.trim().toLowerCase();
                 if (or.includes("chin yetim") || or.includes("ota-onasini")) orphan.both++;
                 if (or.includes("ota yoki") || or.includes("ota-onasidan")) orphan.one++;
                 if (or.includes("ijtimoiy yetim")) orphan.social++;
 
-                if (r.cells[4].textContent.trim() === "Erkak") boys++; else girls++;
+                if (r.cells[5].textContent.trim() === "Erkak") boys++; else girls++;
 
-                const place = normApos(r.cells[7].textContent.trim().toLowerCase());
+                const place = normApos(r.cells[8].textContent.trim().toLowerCase());
                 for (let key of regionKeys) {
                     if (place.includes(normApos(key).toLowerCase())) {
                         regions[key]++;
@@ -2031,6 +2038,7 @@
                             <td class="p-3">${i + 1}</td>
                             <td class="p-3"><img src="${photo || ''}" class="w-10 h-10 rounded-full object-cover shadow cursor-pointer" onclick="viewPhoto(this)" onerror="this.style.display='none'" onload="if(this.src===window.location.href||!this.src){this.style.display='none'}"></td>
                             <td class="p-3 font-medium">${row[1] || ''}</td>
+                            <td class="p-3">${row[14] || ''}</td>
                             <td class="p-3">${row[2] || ''}</td>
                             <td class="p-3">${row[3] || ''}</td>
                             <td class="p-3" data-group="${gName}">${gDisplay}</td>
@@ -2306,7 +2314,7 @@
             if (!tbody) return;
             tbody.innerHTML = '';
             if (!rows || rows.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="16" class="p-4 text-center text-gray-400 text-sm">Sizga biriktirilgan guruh bo\'yicha talabalar topilmadi</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="17" class="p-4 text-center text-gray-400 text-sm">Sizga biriktirilgan guruh bo\'yicha talabalar topilmadi</td></tr>';
                 return;
             }
             const q = (document.getElementById('userStudentSearchInput').value || '').toLowerCase().trim();
@@ -2315,7 +2323,7 @@
                 const row = item.row || item;
                 const globalIndex = (typeof item.index === 'number') ? item.index : i;
                 if (q) {
-                    const haystack = [row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13]].join(' ').toLowerCase();
+                    const haystack = [row[0], row[1], row[2], row[3], row[4], row[5], row[6], row[7], row[8], row[9], row[10], row[11], row[12], row[13], row[14]].join(' ').toLowerCase();
                     if (!haystack.includes(q)) return;
                 }
                 visible++;
@@ -2328,6 +2336,7 @@
                     <td class="p-3">${i + 1}</td>
                     <td class="p-3"><img src="${photo}" class="w-10 h-10 rounded-full object-cover shadow cursor-pointer" onclick="viewPhoto(this)" onerror="this.style.display='none'" alt="Rasm"></td>
                     <td class="p-3 font-medium">${row[1] || ''}</td>
+                    <td class="p-3">${row[14] || ''}</td>
                     <td class="p-3">${row[2] || ''}</td>
                     <td class="p-3">${row[3] || ''}</td>
                     <td class="p-3" data-group="${group}">${group}</td>
@@ -2348,7 +2357,7 @@
                 tbody.appendChild(tr);
             });
             if (visible === 0 && q) {
-                tbody.innerHTML = '<tr><td colspan="16" class="p-4 text-center text-gray-400 text-sm">Qidiruv bo\'yicha natija topilmadi</td></tr>';
+                tbody.innerHTML = '<tr><td colspan="17" class="p-4 text-center text-gray-400 text-sm">Qidiruv bo\'yicha natija topilmadi</td></tr>';
             }
         }
 
@@ -2722,7 +2731,8 @@
             document.getElementById('addStudentModalTitle').textContent = 'Talaba ma\'lumotini tahrirlash';
             updateGroupSelects();
             document.getElementById('stFullName').value = cells[2].textContent.trim();
-            const rawDate = cells[3].textContent.trim();
+            document.getElementById('stJshshr').value = cells[3].textContent.trim();
+            const rawDate = cells[4].textContent.trim();
             const dateParts = rawDate.match(/(\d{1,4})[\s.\-\/](\d{1,2})[\s.\-\/](\d{1,4})/);
             if (dateParts) {
                 let y = dateParts[1], m = dateParts[2], d = dateParts[3];
@@ -2734,8 +2744,8 @@
             } else {
                 document.getElementById('stBirthDate').value = rawDate;
             }
-            document.getElementById('stGender').value = cells[4].textContent.trim();
-            let grpName = cells[5].getAttribute('data-group') || cells[5].textContent.trim();
+            document.getElementById('stGender').value = cells[5].textContent.trim();
+            let grpName = cells[6].getAttribute('data-group') || cells[6].textContent.trim();
             const gParts = grpName.split(' / ');
             const plainGroup = gParts[gParts.length - 1].trim();
             let gi = typeof groupInfoMap !== 'undefined' ? groupInfoMap[plainGroup] : null;
@@ -2753,16 +2763,16 @@
                 document.getElementById('stGroup').value = plainGroup;
             }
             const phoneEl = document.getElementById('stPhone');
-            phoneEl.value = cells[6].textContent.trim();
+            phoneEl.value = cells[7].textContent.trim();
             formatPhoneInput(phoneEl);
-            document.getElementById('stBirthPlace').value = cells[7].textContent.trim();
-            document.getElementById('stAddress').value = cells[8].textContent.trim();
-            document.getElementById('stHousing').value = cells[9].textContent.trim();
-            document.getElementById('stFather').value = cells[10].textContent.trim();
-            document.getElementById('stMother').value = cells[11].textContent.trim();
-            document.getElementById('stFamilyStatus').value = cells[12].textContent.trim();
-            document.getElementById('stSocialCategory').value = cells[13].textContent.trim();
-            document.getElementById('stOrphanCategory').value = cells[14].textContent.trim();
+            document.getElementById('stBirthPlace').value = cells[8].textContent.trim();
+            document.getElementById('stAddress').value = cells[9].textContent.trim();
+            document.getElementById('stHousing').value = cells[10].textContent.trim();
+            document.getElementById('stFather').value = cells[11].textContent.trim();
+            document.getElementById('stMother').value = cells[12].textContent.trim();
+            document.getElementById('stFamilyStatus').value = cells[13].textContent.trim();
+            document.getElementById('stSocialCategory').value = cells[14].textContent.trim();
+            document.getElementById('stOrphanCategory').value = cells[15].textContent.trim();
             document.getElementById('addStudentModal').classList.remove('hidden');
             lockBodyScroll(true);
             setTimeout(() => {
@@ -2797,6 +2807,7 @@
             const photoSrc = await getPhotoSrc(photoInput);
 
             const fullName = document.getElementById('stFullName').value;
+            const jshshr = document.getElementById('stJshshr').value.trim() || '-';
             const birthDate = document.getElementById('stBirthDate').value.trim();
             const gender = document.getElementById('stGender').value;
             const group = document.getElementById('stGroup').value;
@@ -2818,7 +2829,7 @@
                 return;
             }
 
-            const rowData = [photoSrc, fullName, birthDate, gender, group, phone, birthPlace, address, housing, father, mother, familyStatus, socialCategory, orphanCategory];
+            const rowData = [photoSrc, fullName, birthDate, gender, group, phone, birthPlace, address, housing, father, mother, familyStatus, socialCategory, orphanCategory, jshshr];
 
             {
                 try {
@@ -2841,18 +2852,19 @@
                     tds[0].textContent = editIndex;
                     tds[1].innerHTML = `<img src="${photoSrc}" class="w-10 h-10 rounded-full object-cover shadow cursor-pointer" onclick="viewPhoto(this)" onerror="this.style.display='none'" alt="Rasm">`;
                     tds[2].textContent = fullName;
-                    tds[3].textContent = birthDate;
-                    tds[4].textContent = gender;
-                    tds[5].textContent = group;
-                    tds[6].textContent = phone;
-                    tds[7].textContent = birthPlace;
-                    tds[8].textContent = address;
-                    tds[9].textContent = housing;
-                    tds[10].textContent = father;
-                    tds[11].textContent = mother;
-                    tds[12].textContent = familyStatus;
-                    tds[13].textContent = socialCategory;
-                    tds[14].textContent = orphanCategory;
+                    tds[3].textContent = jshshr;
+                    tds[4].textContent = birthDate;
+                    tds[5].textContent = gender;
+                    tds[6].textContent = group;
+                    tds[7].textContent = phone;
+                    tds[8].textContent = birthPlace;
+                    tds[9].textContent = address;
+                    tds[10].textContent = housing;
+                    tds[11].textContent = father;
+                    tds[12].textContent = mother;
+                    tds[13].textContent = familyStatus;
+                    tds[14].textContent = socialCategory;
+                    tds[15].textContent = orphanCategory;
                 }
                 closeAddStudentModal();
                 alert("Talaba ma'lumoti muvaffaqiyatli yangilandi!");
@@ -2865,6 +2877,7 @@
                     <td class="p-3">${rowCount}</td>
                     <td class="p-3"><img src="${photoSrc}" class="w-10 h-10 rounded-full object-cover shadow cursor-pointer" onclick="viewPhoto(this)" onerror="this.style.display='none'" alt="Rasm"></td>
                     <td class="p-3 font-medium">${fullName}</td>
+                    <td class="p-3">${jshshr}</td>
                     <td class="p-3">${birthDate}</td>
                     <td class="p-3">${gender}</td>
                     <td class="p-3">${group}</td>
@@ -2957,7 +2970,7 @@
             if (confirm("Haqiqatan ham bu talabani o'chirmoqchimisiz?")) {
                 const row = button.closest('tr');
                 const name = row.querySelector('td:nth-child(3)').textContent.trim();
-                const group = row.querySelector('td:nth-child(6)').textContent.trim();
+                const group = row.querySelector('td:nth-child(7)').textContent.trim();
 
                 {
                     try {
