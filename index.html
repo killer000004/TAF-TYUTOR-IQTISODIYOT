@@ -799,6 +799,10 @@
                             </button>
                             <span id="driveUploadStatus" class="text-xs text-gray-500"></span>
                         </div>
+                        <div id="stPasteBox" title="Rasmni shu yerga qo'ying (Ctrl+V)" onclick="focusPasteTarget()" class="mt-2 cursor-pointer border-2 border-dashed border-gray-300 rounded-lg p-3 text-center text-xs text-gray-400 hover:border-blue-400 hover:text-blue-500 hover:bg-blue-50 transition flex items-center justify-center gap-1.5">
+                            <i class="fa-solid fa-clipboard"></i> Rasmni clipboarddan qo'yish (Ctrl+V)
+                        </div>
+                        <textarea id="stPasteTarget" class="sr-only" aria-hidden="true" tabindex="-1" readonly></textarea>
                         <div id="stPhotoPreviewWrap" class="mt-2 hidden">
                             <img id="stPhotoPreview" src="" class="w-16 h-16 rounded-lg object-cover border" alt="Rasm">
                         </div>
@@ -1236,6 +1240,68 @@
             const wrap = document.getElementById('stPhotoPreviewWrap');
             if (wrap) wrap.classList.add('hidden');
         }
+
+        // RASMNI KLIPBOARDDAN QO'YISH (Ctrl+V) — fayl yuklash bilan parallel usul
+        function focusPasteTarget() {
+            const t = document.getElementById('stPasteTarget');
+            if (t) t.focus();
+        }
+
+        function downscaleImage(file, maxDim) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = function (ev) {
+                    const img = new Image();
+                    img.onload = function () {
+                        let w = img.width, h = img.height;
+                        const scale = Math.min(1, maxDim / Math.max(w, h));
+                        w = Math.round(w * scale);
+                        h = Math.round(h * scale);
+                        const canvas = document.createElement('canvas');
+                        canvas.width = w;
+                        canvas.height = h;
+                        const ctx = canvas.getContext('2d');
+                        ctx.drawImage(img, 0, 0, w, h);
+                        resolve(canvas.toDataURL('image/jpeg', 0.82));
+                    };
+                    img.onerror = reject;
+                    img.src = ev.target.result;
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function setPastedImage(dataUrl) {
+            document.getElementById('stEditPhoto').value = dataUrl;
+            const preview = document.getElementById('stPhotoPreview');
+            if (preview) {
+                preview.src = dataUrl;
+                const wrap = document.getElementById('stPhotoPreviewWrap');
+                if (wrap) wrap.classList.remove('hidden');
+            }
+            setDriveStatus('Rasm clipboarddan qo\'yildi!');
+        }
+
+        function handlePasteImage(e) {
+            const modal = document.getElementById('addStudentModal');
+            if (!modal || modal.classList.contains('hidden')) return;
+            const items = (e.clipboardData || window.clipboardData || {}).items;
+            if (!items) return;
+            for (const item of items) {
+                if (item.type && item.type.indexOf('image') === 0) {
+                    e.preventDefault();
+                    const file = item.getAsFile();
+                    if (!file) return;
+                    setDriveStatus('Rasm clipboarddan olinmoqda...');
+                    downscaleImage(file, 800).then(setPastedImage).catch(() => {
+                        setDriveStatus('Rasmni olishda xatolik!');
+                    });
+                    return;
+                }
+            }
+        }
+        document.addEventListener('paste', handlePasteImage);
 
         // SDK oldinroq yuklangan bo'lsa (cached) onload head-stub ga tushgan bo'lishi mumkin
         if (window.__driveLibs) {
