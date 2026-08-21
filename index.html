@@ -1241,7 +1241,24 @@
                     console.warn('autoUpload auth xato', e);
                 }
             } else {
-                await driveUploadPending();
+                const file = fileInput.files[0];
+                if (!file) return;
+                setDriveStatus('Drive\'ga yuklanmoqda...');
+                try {
+                    const url = await uploadFileToDrive(file);
+                    document.getElementById('stEditPhoto').value = url;
+                    const preview = document.getElementById('stPhotoPreview');
+                    if (preview) {
+                        preview.src = url;
+                        const wrap = document.getElementById('stPhotoPreviewWrap');
+                        if (wrap) wrap.classList.remove('hidden');
+                    }
+                    fileInput.value = '';
+                    setDriveStatus('Rasm Drive\'ga saqlandi!');
+                } catch (e) {
+                    console.error('Drive upload xato', e);
+                    setDriveStatus('Yuklashda xato: ' + e.message);
+                }
             }
         }
 
@@ -1290,6 +1307,36 @@
                 console.error('Drive upload xato', e);
                 setDriveStatus('Yuklashda xato: ' + e.message);
             }
+        }
+
+        async function uploadFileToDrive(file, fileName) {
+            if (!(gapi && gapi.client && gapi.client.getToken())) {
+                throw new Error('Google Drive bilan bog\'lanilmagan. Avval "Google Drive bilan bog\'lanish" tugmasini bosing.');
+            }
+            if (file.size > 5 * 1024 * 1024) {
+                throw new Error('Rasm 5MB dan katta bo\'lmasin!');
+            }
+            const accessToken = gapi.client.getToken().access_token;
+            const safeName = fileName || 'student_' + Date.now() + '_' + (file.name || 'photo').replace(/[^a-zA-Z0-9.\-_]/g, '_');
+            const metadata = { name: safeName, mimeType: file.type || 'image/jpeg' };
+            const form = new FormData();
+            form.append('metadata', new Blob([JSON.stringify(metadata)], { type: 'application/json' }));
+            form.append('file', file);
+            const up = await fetch('https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart', {
+                method: 'POST',
+                headers: new Headers({ 'Authorization': 'Bearer ' + accessToken }),
+                body: form,
+            });
+            const result = await up.json();
+            if (!result.id) {
+                throw new Error('Yuklashda xatolik yuz berdi!');
+            }
+            await fetch('https://www.googleapis.com/drive/v3/files/' + result.id + '/permissions', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + accessToken, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ role: 'reader', type: 'anyone' }),
+            });
+            return 'https://drive.google.com/uc?export=view&id=' + result.id;
         }
 
         function setDriveStatus(text) {
@@ -1357,9 +1404,27 @@
                     e.preventDefault();
                     const file = item.getAsFile();
                     if (!file) return;
-                    setDriveStatus('Rasm clipboarddan olinmoqda...');
-                    downscaleImage(file, 800).then(setPastedImage).catch(() => {
-                        setDriveStatus('Rasmni olishda xatolik!');
+                    setDriveStatus('Rasm Drive\'ga yuklanmoqda...');
+                    downscaleImage(file, 800).then(dataUrl => {
+                        const byteString = atob(dataUrl.split(',')[1]);
+                        const mime = dataUrl.split(',')[0].match(/:(.*?);/)[1];
+                        const ab = new ArrayBuffer(byteString.length);
+                        const ia = new Uint8Array(ab);
+                        for (let i = 0; i < byteString.length; i++) ia[i] = byteString.charCodeAt(i);
+                        const blob = new Blob([ia], { type: mime });
+                        return uploadFileToDrive(blob, 'student_' + Date.now() + '_paste.jpg');
+                    }).then(url => {
+                        document.getElementById('stEditPhoto').value = url;
+                        const preview = document.getElementById('stPhotoPreview');
+                        if (preview) {
+                            preview.src = url;
+                            const wrap = document.getElementById('stPhotoPreviewWrap');
+                            if (wrap) wrap.classList.remove('hidden');
+                        }
+                        setDriveStatus('Rasm Drive\'ga saqlandi!');
+                    }).catch(err => {
+                        console.error('Drive upload error', err);
+                        setDriveStatus('Drive\'ga yuklashda xatolik: ' + (err.message || err));
                     });
                     return;
                 }
