@@ -1150,9 +1150,8 @@
         function saveCache(k, v) { try { localStorage.setItem('cache_' + k, JSON.stringify(v)); } catch(e) {} }
         function loadCache(k) { try { return JSON.parse(localStorage.getItem('cache_' + k)); } catch(e) { return null; } }
 
-        // ===== GOOGLE DRIVE INTEGRATION (RASMLARNI DRIVE'GA YUKLASH) =====
-<<<<<<< HEAD
-const DRIVE_CLIENT_ID = '488899986676-afde7ggd19r6vpqpc3snl9ad0s5thpgl.apps.googleusercontent.com';
+// ===== GOOGLE DRIVE INTEGRATION (RASMLARNI DRIVE'GA YUKLASH) =====
+        const DRIVE_CLIENT_ID = '488899986676-afde7ggd19r6vpqpc3snl9ad0s5thpgl.apps.googleusercontent.com';
         const DRIVE_DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/drive/v3/rest';
         const DRIVE_SCOPES = 'https://www.googleapis.com/auth/drive.file';
 
