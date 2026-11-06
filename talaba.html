@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="uz">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Talaba ma'lumotlarini to'ldirish</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { background: #F3F4F6; }
+        .locked { background: #F9FAFB; color: #059669; }
+        .field-label { font-size: .75rem; font-weight: 600; color: #374151; margin-bottom: .25rem; display: block; }
+        .inp { width: 100%; padding: .5rem .75rem; border: 1px solid #D1D5DB; border-radius: .5rem; font-size: .875rem; background: #fff; }
+        .inp:focus { outline: none; border-color: #2563EB; box-shadow: 0 0 0 2px rgba(37, 99, 235, .25); }
+        .btn { background: #2563EB; color: #fff; border-radius: .5rem; padding: .6rem 1rem; font-weight: 600; font-size: .875rem; }
+        .btn:hover { background: #1D4ED8; }
+        .btn:disabled { background: #93C5FD; cursor: not-allowed; }
+    </style>
+</head>
+<body class="min-h-screen">
+    <div class="max-w-xl mx-auto px-4 py-6">
+        <div class="bg-white rounded-xl shadow p-5 mb-4">
+            <h1 class="text-lg font-bold text-gray-800"><i class="fa-solid fa-user-pen text-blue-600"></i> Talaba ma'lumotlarini to'ldirish</h1>
+            <p class="text-xs text-gray-500 mt-1">Toshkent amaliy fanlar universiteti · Iqtisodiyot fakulteti</p>
+        </div>
+
+        <!-- 1-QADAM: QIDIRUV -->
+        <div id="stepSearch" class="bg-white rounded-xl shadow p-5 mb-4">
+            <label class="field-label" for="q">Familiya, ism va otangizning ismini yozing</label>
+            <div class="flex gap-2">
+                <input id="q" class="inp" placeholder="Masalan: Aliyev Vali" autocomplete="off" onkeydown="if(event.key==='Enter')doSearch()">
+                <button id="searchBtn" class="btn whitespace-nowrap" onclick="doSearch()"><i class="fa-solid fa-magnifying-glass"></i> Qidirish</button>
+            </div>
+            <p id="searchMsg" class="text-xs mt-2 text-gray-500">Kamida familiya va ismingizni yozing.</p>
+            <div id="results" class="mt-3 space-y-2"></div>
+        </div>
+
+        <!-- 2-QADAM: FORMA -->
+        <div id="stepForm" class="hidden bg-white rounded-xl shadow p-5 mb-4">
+            <div class="flex items-start justify-between gap-2 mb-3">
+                <div>
+                    <p id="fName" class="font-bold text-gray-800"></p>
+                    <p id="fGroup" class="text-xs text-gray-500"></p>
+                </div>
+                <button class="text-xs text-blue-600 hover:underline whitespace-nowrap" onclick="backToSearch()"><i class="fa-solid fa-arrow-left"></i> Bu men emasman</button>
+            </div>
+            <div class="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-900 mb-4">
+                <i class="fa-solid fa-circle-info"></i>
+                <b>✓ To'ldirilgan</b> maydonlarni o'zgartirib bo'lmaydi — ularni faqat tyutoringiz o'zgartiradi.
+                <b>Yashash manzili</b>ni esa o'zgargan bo'lsa yangilashingiz mumkin. Bo'sh maydonlarni to'ldiring.
+            </div>
+
+            <div id="verifyBox" class="hidden bg-yellow-50 border border-yellow-300 rounded-lg p-3 mb-4">
+                <label class="field-label" for="verify" id="verifyLabel"></label>
+                <input id="verify" class="inp" autocomplete="off">
+                <p class="text-xs text-yellow-800 mt-1">Bu boshqa odam sizning nomingizdan ma'lumot kiritmasligi uchun kerak.</p>
+            </div>
+
+            <div id="fields" class="space-y-3"></div>
+
+            <button id="saveBtn" class="btn w-full mt-5" onclick="doSubmit()"><i class="fa-solid fa-floppy-disk"></i> Saqlash</button>
+            <p id="saveMsg" class="text-sm mt-3"></p>
+        </div>
+
+        <p class="text-center text-xs text-gray-400 mt-6">Muammo bo'lsa, guruh tyutoringizga murojaat qiling.</p>
+    </div>
+
+<script>
+    // Asosiy saytdagi bilan bir xil Apps Script manzili
+    const POST_URL = 'https://script.google.com/macros/s/AKfycbwyClbfvKsMbJ_i3Rpu5FLFAyLjRmaWJ4ac3BmqoNYhTlis5C1-dJk5teJeP7Fd_aRS/exec';
+
+    // Maydonlar (Sheet ustunlari tartibida). type: text | select | date | phone | jshshr | social
+    const FIELDS = [
+        { key: 'jshshr',  label: 'JSHSHR (PINFL)', type: 'jshshr', ph: '14 xonali raqam' },
+        { key: 'birth',   label: "Tug'ilgan sana", type: 'date', ph: 'KK.OO.YYYY' },
+        { key: 'gender',  label: 'Jinsi', type: 'select', options: ['Erkak', 'Ayol'] },
+        { key: 'group',   label: "Yo'nalish / Kurs / Guruh", type: 'select', options: [] },
+        { key: 'phone',   label: 'Telefon', type: 'phone', ph: '+998901234567' },
+        { key: 'bplace',  label: "Tug'ilgan joyi", type: 'text', ph: 'Viloyat, tuman' },
+        { key: 'address', label: 'Yashash manzili', type: 'text', ph: 'Viloyat, tuman, mahalla, ko\'cha, uy' },
+        { key: 'housing', label: 'Uy-joy', type: 'select', options: ["O'z uyi", 'Ijara', 'Qarindoshniki', 'Yotoqxona'] },
+        { key: 'father',  label: 'Otasi (F.I.Sh)', type: 'text', ph: 'Otangizning familiya, ism, sharifi' },
+        { key: 'mother',  label: 'Onasi (F.I.Sh)', type: 'text', ph: 'Onangizning familiya, ism, sharifi' },
+        { key: 'family',  label: 'Oilaviy holati', type: 'select', options: ['Oilaasiz', 'Oila'], labels: ['Turmush qurmagan', 'Oilali'] },
+        { key: 'social',  label: 'Ijtimoiy toifa', type: 'social', options: ['Temir daftar', 'Yoshlar daftari', 'Ayollar daftari', 'Mehr daftari', 'Nogironligi bor'] },
+        { key: 'orphan',  label: 'Yetimlik toifasi', type: 'select',
+          options: ["Yo'q", 'Chin yetim', "Boquvchisini yo'qotgan", 'Ijtimoiy yetim (vasiylik yoki homiylik)', 'Mehribonlik uyi tarbiyalanuvchisi'] }
+    ];
+    const ALWAYS_EDITABLE = ['address'];
+
+    let current = null;      // { name, group, filled, verify }
+    let groups = [];
+
+    function esc(v) {
+        return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+    }
+
+    async function api(action, data) {
+        let resp;
+        try {
+            resp = await fetch(POST_URL, { method: 'POST', headers: { 'Content-Type': 'text/plain;charset=utf-8' }, body: JSON.stringify({ action, data }) });
+        } catch (e) {
+            throw new Error("Serverga ulanib bo'lmadi. Internetni tekshiring");
+        }
+        let res = null;
+        try { res = await resp.json(); } catch (e) { /* JSON emas */ }
+        if (!res) throw new Error('Server javob bermadi. Keyinroq urinib ko\'ring');
+        if (res.error && /unknown action/i.test(res.error)) throw new Error("Server hali yangilanmagan. Tyutoringizga xabar bering");
+        return res;
+    }
+
+    // ---------- 1-qadam: qidiruv ----------
+    async function doSearch() {
+        const q = document.getElementById('q').value.trim();
+        const msg = document.getElementById('searchMsg');
+        const box = document.getElementById('results');
+        const btn = document.getElementById('searchBtn');
+        box.innerHTML = '';
+        if (q.split(/\s+/).filter(w => w.length >= 2).length < 2) {
+            msg.className = 'text-xs mt-2 text-red-600';
+            msg.textContent = 'Kamida familiya va ismingizni yozing (masalan: Aliyev Vali).';
+            return;
+        }
+        btn.disabled = true;
+        msg.className = 'text-xs mt-2 text-gray-500';
+        msg.textContent = 'Qidirilmoqda...';
+        try {
+            const res = await api('studentSearch', { query: q });
+            if (!res.success) throw new Error(res.error || 'Xatolik');
+            groups = res.groups || [];
+            if (!res.results.length) {
+                msg.className = 'text-xs mt-2 text-yellow-700';
+                msg.textContent = "Topilmadi. Ismingizni hujjatdagidek yozganingizni tekshiring yoki tyutoringizga murojaat qiling.";
+                return;
+            }
+            msg.className = 'text-xs mt-2 text-gray-500';
+            msg.textContent = 'O\'zingizni tanlang:';
+            window._results = res.results;
+            box.innerHTML = res.results.map((r, i) => `
+                <button class="w-full text-left border rounded-lg px-3 py-2 hover:bg-blue-50 hover:border-blue-300 flex items-center justify-between gap-2" onclick="pick(${i})">
+                    <span><span class="font-semibold text-sm text-gray-800">${esc(r.name)}</span><br>
+                    <span class="text-xs text-gray-500">${r.group ? esc(r.group) + ' guruh' : 'Guruh ko\'rsatilmagan'}</span></span>
+                    <span class="text-xs text-blue-600 whitespace-nowrap">Bu menman <i class="fa-solid fa-chevron-right"></i></span>
+                </button>`).join('');
+        } catch (e) {
+            msg.className = 'text-xs mt-2 text-red-600';
+            msg.textContent = e.message;
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function pick(i) {
+        current = JSON.parse(JSON.stringify(window._results[i]));
+        document.getElementById('stepSearch').classList.add('hidden');
+        document.getElementById('stepForm').classList.remove('hidden');
+        document.getElementById('saveMsg').textContent = '';
+        renderForm();
+        window.scrollTo(0, 0);
+    }
+
+    function backToSearch() {
+        current = null;
+        document.getElementById('stepForm').classList.add('hidden');
+        document.getElementById('stepSearch').classList.remove('hidden');
+    }
+
+    // ---------- 2-qadam: forma ----------
+    function inputHtml(f) {
+        const id = 'f_' + f.key;
+        if (f.type === 'select') {
+            const opts = f.key === 'group' ? groups : f.options;
+            return `<select id="${id}" class="inp"><option value="">— Tanlang —</option>${opts.map((o, i) =>
+                `<option value="${esc(o)}">${esc(f.labels ? f.labels[i] : o)}</option>`).join('')}</select>`;
+        }
+        if (f.type === 'social') {
+            return `<div class="grid grid-cols-1 sm:grid-cols-2 gap-1.5">${f.options.map((o, i) =>
+                `<label class="flex items-center gap-2 text-sm"><input type="checkbox" class="soc" value="${esc(o)}" onchange="socChange(false)"> ${esc(o)}</label>`).join('')}
+                <label class="flex items-center gap-2 text-sm font-semibold"><input type="checkbox" id="socNone" onchange="socChange(true)"> Hech biri</label></div>`;
+        }
+        const extra = f.type === 'date' ? 'inputmode="numeric" maxlength="10" oninput="fmtDate(this)"'
+            : f.type === 'phone' ? 'inputmode="tel" oninput="fmtPhone(this)"'
+            : f.type === 'jshshr' ? 'inputmode="numeric" maxlength="14" oninput="this.value=this.value.replace(/\\D/g,\'\')"' : 'maxlength="300"';
+        return `<input id="${id}" class="inp" placeholder="${esc(f.ph || '')}" autocomplete="off" ${extra}>`;
+    }
+
+    function renderForm() {
+        document.getElementById('fName').textContent = current.name;
+        document.getElementById('fGroup').textContent = current.group ? current.group + ' guruh' : 'Guruh ko\'rsatilmagan';
+
+        const vb = document.getElementById('verifyBox');
+        const vi = document.getElementById('verify');
+        vi.value = '';
+        vi.oninput = null;
+        if (current.verify === 'jshshr') {
+            vb.classList.remove('hidden');
+            document.getElementById('verifyLabel').textContent = 'Shaxsingizni tasdiqlash: JSHSHR (PINFL) raqamingizni kiriting';
+            vi.placeholder = '14 xonali raqam'; vi.inputMode = 'numeric'; vi.maxLength = 14;
+            vi.oninput = () => { vi.value = vi.value.replace(/\D/g, ''); };
+        } else if (current.verify === 'birth') {
+            vb.classList.remove('hidden');
+            document.getElementById('verifyLabel').textContent = "Shaxsingizni tasdiqlash: tug'ilgan sanangizni kiriting";
+            vi.placeholder = 'KK.OO.YYYY'; vi.inputMode = 'numeric'; vi.maxLength = 10;
+            vi.oninput = () => fmtDate(vi);
+        } else {
+            vb.classList.add('hidden');
+        }
+
+        let anyOpen = false;
+        document.getElementById('fields').innerHTML = FIELDS.map(f => {
+            const filled = current.filled[f.key];
+            const editable = !filled || ALWAYS_EDITABLE.includes(f.key);
+            if (!editable) {
+                return `<div><span class="field-label">${esc(f.label)}</span>
+                    <div class="locked border rounded-lg px-3 py-2 text-sm"><i class="fa-solid fa-circle-check"></i> To'ldirilgan</div></div>`;
+            }
+            anyOpen = true;
+            const note = filled ? `<p class="text-xs text-gray-500 mt-1">Manzilingiz kiritilgan. O'zgargan bo'lsa yangisini yozing, aks holda bo'sh qoldiring.</p>` : '';
+            return `<div><label class="field-label" for="f_${f.key}">${esc(f.label)}</label>${inputHtml(f)}${note}</div>`;
+        }).join('');
+        document.getElementById('saveBtn').classList.toggle('hidden', !anyOpen);
+    }
+
+    function socChange(none) {
+        const n = document.getElementById('socNone');
+        if (none && n.checked) document.querySelectorAll('.soc').forEach(c => c.checked = false);
+        if (!none) n.checked = false;
+    }
+    function fmtDate(el) {
+        let v = el.value.replace(/\D/g, '').slice(0, 8);
+        if (v.length > 4) v = v.slice(0, 4) + '.' + v.slice(4);
+        if (v.length > 2) v = v.slice(0, 2) + '.' + v.slice(2);
+        el.value = v;
+    }
+    function fmtPhone(el) {
+        let v = el.value.replace(/\D/g, '');
+        if (v.startsWith('998')) v = v.slice(3);
+        el.value = '+998' + v.slice(0, 9);
+    }
+
+    function collect() {
+        const out = {}, errs = [];
+        FIELDS.forEach(f => {
+            const editable = !current.filled[f.key] || ALWAYS_EDITABLE.includes(f.key);
+            if (!editable) return;
+            let v = '';
+            if (f.type === 'social') {
+                const picked = Array.from(document.querySelectorAll('.soc:checked')).map(c => c.value);
+                v = picked.length ? picked.join(', ') : (document.getElementById('socNone').checked ? "Yo'q" : '');
+            } else {
+                const el = document.getElementById('f_' + f.key);
+                v = el ? el.value.trim() : '';
+            }
+            if (!v || (f.type === 'phone' && v === '+998')) return;
+            if (f.type === 'jshshr' && !/^\d{14}$/.test(v)) errs.push('JSHSHR 14 ta raqam bo\'lishi kerak');
+            if (f.type === 'date' && !/^\d{2}\.\d{2}\.\d{4}$/.test(v)) errs.push("Tug'ilgan sana KK.OO.YYYY ko'rinishida bo'lsin");
+            if (f.type === 'phone' && !/^\+998\d{9}$/.test(v)) errs.push("Telefon raqami to'liq emas (+998 va 9 ta raqam)");
+            if (f.type === 'text' && v.length < 2) errs.push(f.label + ' juda qisqa');
+            out[f.key] = v;
+        });
+        return { out, errs };
+    }
+
+    async function doSubmit() {
+        const msg = document.getElementById('saveMsg');
+        const btn = document.getElementById('saveBtn');
+        const { out, errs } = collect();
+        const verify = document.getElementById('verify').value.trim();
+        if (current.verify && !verify) errs.unshift(current.verify === 'jshshr' ? 'Tasdiqlash uchun JSHSHR raqamingizni kiriting' : "Tasdiqlash uchun tug'ilgan sanangizni kiriting");
+        if (!Object.keys(out).length && !errs.length) errs.push("Hech qanday maydon to'ldirilmadi");
+        if (errs.length) { msg.className = 'text-sm mt-3 text-red-600'; msg.innerHTML = errs.map(esc).join('<br>'); return; }
+
+        btn.disabled = true;
+        btn.textContent = 'Saqlanmoqda...';
+        msg.className = 'text-sm mt-3 text-gray-500';
+        msg.textContent = '';
+        try {
+            const res = await api('studentSubmit', { id: { name: current.name, group: current.group }, verify, fields: out });
+            if (!res.success) throw new Error(res.error || 'Saqlanmadi');
+            const labels = k => (FIELDS.find(f => f.key === k) || {}).label || k;
+            if (res.filled) current.filled = res.filled;
+            if (out.group && res.changed.includes('group')) { current.group = out.group; }
+            if (res.changed.includes('jshshr')) current.verify = 'jshshr';
+            else if (res.changed.includes('birth') && !current.verify) current.verify = 'birth';
+            renderForm();
+            msg.className = 'text-sm mt-3 text-green-700';
+            msg.innerHTML = res.changed.length
+                ? '<i class="fa-solid fa-circle-check"></i> Saqlandi: ' + res.changed.map(k => esc(labels(k))).join(', ') + '. Rahmat!'
+                : "O'zgartirish yo'q.";
+            if (res.skipped && res.skipped.length) msg.innerHTML += '<br><span class="text-yellow-700 text-xs">Allaqachon to\'ldirilgani uchun o\'zgartirilmadi: ' + res.skipped.map(k => esc(labels(k))).join(', ') + '</span>';
+        } catch (e) {
+            msg.className = 'text-sm mt-3 text-red-600';
+            msg.textContent = e.message;
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> Saqlash';
+        }
+    }
+</script>
+</body>
+</html>
