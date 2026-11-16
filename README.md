@@ -1,1 +1,1 @@
-# TAF-TYUTOR-IQTISODIYOT
+# tafu-tyutor-iqtisodiyot
